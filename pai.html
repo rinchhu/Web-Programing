@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>a question for you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500;1,600&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum-deep:#2b1b3d;
+    --plum-mid:#4a2c5e;
+    --plum-soft:#6b3f6e;
+    --rose:#f2b8c6;
+    --coral:#ef8b7a;
+    --gold:#f0c479;
+    --cream:#fff6ee;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background:linear-gradient(160deg,var(--plum-deep) 0%,var(--plum-mid) 55%,var(--plum-soft) 100%);
+    font-family:'Quicksand',sans-serif;
+    color:var(--cream);
+  }
+
+  .scene{ position:relative; width:100vw; height:100vh; overflow:hidden; }
+
+  /* ambient floating hearts in the background */
+  .ambient{ position:absolute; inset:0; pointer-events:none; z-index:0; }
+  .amb-heart{
+    position:absolute; bottom:-10%; opacity:.16; color:var(--rose);
+    animation:amb-float linear infinite;
+    font-size:20px;
+  }
+  @keyframes amb-float{
+    0%{ transform:translateY(0) translateX(0) rotate(0deg); opacity:0; }
+    10%{ opacity:.18; }
+    90%{ opacity:.14; }
+    100%{ transform:translateY(-115vh) translateX(var(--drift,20px)) rotate(25deg); opacity:0; }
+  }
+
+  /* ---------- STAGE 1 : the ask ---------- */
+  .stage{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    z-index:2;
+  }
+  #stage-ask{ flex-direction:column; text-align:center; padding:24px; }
+
+  .eyebrow{
+    font-family:'Quicksand',sans-serif; font-weight:600; letter-spacing:.35em;
+    text-transform:uppercase; font-size:12px; color:var(--gold); opacity:.85;
+    margin-bottom:18px;
+  }
+
+  h1.headline{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:600;
+    font-size:clamp(40px,9vw,84px); line-height:1.05; margin:0 0 10px 0;
+    color:var(--cream);
+    text-shadow:0 6px 40px rgba(239,139,122,.25);
+  }
+
+  .prompt-line{
+    font-family:'Cormorant Garamond', serif; font-size:clamp(18px,3vw,24px);
+    color:var(--rose); min-height:34px; margin-bottom:38px; font-style:italic;
+    transition:opacity .25s ease;
+  }
+
+  .btn-field{
+    position:relative;
+    width:min(92vw,560px);
+    height:120px;
+    display:flex; align-items:center; justify-content:center;
+    gap:26px;
+  }
+
+  .btn{
+    border:none; cursor:pointer; border-radius:999px;
+    font-family:'Quicksand',sans-serif; font-weight:700; letter-spacing:.02em;
+    padding:16px 40px; font-size:18px;
+    transition:transform .18s cubic-bezier(.34,1.56,.64,1), left .28s ease, top .28s ease, opacity .2s ease;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+
+  #yesBtn{
+    background:linear-gradient(135deg,var(--coral),var(--gold));
+    color:var(--plum-deep);
+    z-index:3;
+  }
+  #yesBtn:active{ transform:scale(.96) var(--yes-scale-t, scale(1)); }
+
+  #noBtn{
+    background:transparent;
+    color:var(--rose);
+    border:2px solid var(--rose);
+    position:relative;
+    z-index:3;
+    white-space:nowrap;
+  }
+  #noBtn.roaming{ position:absolute; }
+  #noBtn.sulky{
+    border-color:rgba(242,184,198,.45);
+    color:rgba(242,184,198,.65);
+    transform-origin:center;
+    cursor:default;
+  }
+
+  @keyframes screen-shake{
+    0%{ transform:translate(0,0); }
+    20%{ transform:translate(-6px,3px); }
+    40%{ transform:translate(5px,-4px); }
+    60%{ transform:translate(-4px,-2px); }
+    80%{ transform:translate(4px,3px); }
+    100%{ transform:translate(0,0); }
+  }
+  .scene.shake{ animation:screen-shake .35s ease; }
+
+  /* ---------- STAGE 2 : pop the bubbles ---------- */
+  #stage-bubbles{ display:none; flex-direction:column; z-index:2; }
+  .bubble-header{
+    position:absolute; top:6%; left:0; right:0; text-align:center; padding:0 20px;
+  }
+  .bubble-header h2{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:600;
+    font-size:clamp(24px,5vw,38px); margin:0 0 6px 0; color:var(--cream);
+  }
+  .bubble-header p{
+    margin:0 0 10px 0; color:var(--gold); font-size:14px; letter-spacing:.08em;
+    text-transform:uppercase; font-weight:600;
+  }
+
+  .progress-track{
+    width:min(80vw,320px); height:8px; margin:0 auto;
+    border-radius:999px; background:rgba(255,246,238,.15);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; width:0%; border-radius:999px;
+    background:linear-gradient(90deg,var(--coral),var(--gold));
+    transition:width .35s ease;
+  }
+
+  .bubble-field{ position:absolute; inset:0; }
+
+  .pop-message{
+    position:absolute; pointer-events:none;
+    font-family:'Cormorant Garamond', serif; font-style:italic;
+    font-size:15px; color:var(--cream); text-shadow:0 2px 10px rgba(0,0,0,.4);
+    white-space:nowrap;
+    animation:pop-msg-float 1.4s ease-out forwards;
+    z-index:5;
+  }
+  @keyframes pop-msg-float{
+    0%{ opacity:0; transform:translateY(0); }
+    15%{ opacity:1; }
+    75%{ opacity:1; }
+    100%{ opacity:0; transform:translateY(-38px); }
+  }
+
+  .bubble{
+    position:absolute;
+    bottom:-80px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    background:radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), rgba(242,184,198,.35) 45%, rgba(239,139,122,.28) 100%);
+    box-shadow:0 0 18px rgba(240,196,121,.25), inset 0 0 14px rgba(255,255,255,.4);
+    border:1px solid rgba(255,255,255,.4);
+    animation:rise linear forwards;
+  }
+  .bubble span{ font-size:60%; opacity:.85; color:#fff; }
+
+  @keyframes rise{
+    0%{ transform:translateX(0) translateY(0) scale(1); }
+    100%{ transform:translateX(var(--drift,0px)) translateY(-115vh) scale(1); }
+  }
+
+  .pop-burst{
+    position:absolute; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle, rgba(255,255,255,.9), rgba(242,184,198,0) 70%);
+    animation:burst .45s ease-out forwards;
+  }
+  @keyframes burst{
+    0%{ transform:scale(.2); opacity:1; }
+    100%{ transform:scale(2.6); opacity:0; }
+  }
+
+  /* ---------- STAGE 3 : dandelion finale ---------- */
+  #stage-final{ display:none; z-index:2; flex-direction:column; text-align:center; padding:24px; }
+  .final-inner{ opacity:0; transform:translateY(14px); transition:opacity 1.1s ease, transform 1.1s ease; }
+  .final-inner.show{ opacity:1; transform:translateY(0); }
+
+  h1.final-headline{
+    font-family:'Cormorant Garamond', serif; font-style:italic; font-weight:600;
+    font-size:clamp(42px,10vw,96px); margin:0; color:var(--cream);
+    text-shadow:0 6px 40px rgba(240,196,121,.35);
+  }
+  .final-sub{
+    font-family:'Cormorant Garamond', serif; font-size:clamp(16px,2.6vw,22px);
+    color:var(--rose); margin-top:14px; font-style:italic;
+  }
+
+  .seed-field{ position:absolute; inset:0; pointer-events:none; z-index:1; }
+  .seed{
+    position:absolute; top:-6%;
+    animation:fall linear forwards;
+    opacity:.9;
+  }
+  @keyframes fall{
+    0%{ transform:translate(0,0) rotate(0deg); opacity:0; }
+    8%{ opacity:.95; }
+    100%{ transform:translate(var(--sx,60px), 112vh) rotate(var(--sr,320deg)); opacity:.15; }
+  }
+
+  @media (max-width:480px){
+    .btn{ padding:13px 28px; font-size:16px; }
+    .btn-field{ height:100px; gap:16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .amb-heart, .bubble, .seed{ animation:none !important; display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <div class="ambient" id="ambient"></div>
+
+  <!-- STAGE 1 -->
+  <section class="stage" id="stage-ask">
+    <div class="eyebrow">a small question</div>
+    <h1 class="headline">I love you</h1>
+    <div class="prompt-line" id="promptLine">do you love me too?</div>
+    <div class="btn-field" id="btnField">
+      <button class="btn" id="yesBtn">Yes</button>
+      <button class="btn" id="noBtn">No</button>
+    </div>
+  </section>
+
+  <!-- STAGE 2 -->
+  <section class="stage" id="stage-bubbles">
+    <div class="bubble-header">
+      <h2>pop a few of these</h2>
+      <p id="popCount">0 / 12 popped</p>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="bubble-field" id="bubbleField"></div>
+  </section>
+
+  <!-- STAGE 3 -->
+  <section class="stage" id="stage-final">
+    <div class="seed-field" id="seedField"></div>
+    <div class="final-inner" id="finalInner">
+      <h1 class="final-headline">I love you too</h1>
+      <div class="final-sub">now and always</div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ---------------- ambient background hearts ---------------- */
+const ambient = document.getElementById('ambient');
+const HEARTS = ['♥','❤'];
+for(let i=0;i<14;i++){
+  const h = document.createElement('div');
+  h.className='amb-heart';
+  h.textContent = HEARTS[Math.random()<0.5?0:1];
+  h.style.left = Math.random()*100+'vw';
+  h.style.fontSize = (14+Math.random()*22)+'px';
+  h.style.setProperty('--drift', (Math.random()*80-40)+'px');
+  h.style.animationDuration = (10+Math.random()*10)+'s';
+  h.style.animationDelay = (Math.random()*10)+'s';
+  ambient.appendChild(h);
+}
+
+/* ---------------- STAGE 1: the chase ---------------- */
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const btnField = document.getElementById('btnField');
+const promptLine = document.getElementById('promptLine');
+
+const teases = [
+  "do you love me too?",
+  "are you sure?",
+  "think again...",
+  "really truly sure?",
+  "last chance to reconsider",
+  "my heart is waiting",
+  "come on now",
+  "you know you do",
+  "just say yes",
+  "it's the only right answer"
+];
+
+let noClicks = 0;
+let yesScale = 1;
+let noScale = 1;
+const MAX_DODGES = 6;
+let givenUp = false;
+
+// labels the No button cycles through as it shrinks and flees
+const noLabels = ["No","Nope","Not a chance","...maybe?"];
+const sulkyLabel = "...fine, yes?";
+
+function currentNoLabel(i){
+  return noLabels[Math.min(i-1, noLabels.length-1)];
+}
+
+const scene = document.querySelector('.scene');
+function shakeScreen(){
+  scene.classList.remove('shake');
+  // force reflow so the animation can retrigger back-to-back
+  void scene.offsetWidth;
+  scene.classList.add('shake');
+  setTimeout(()=> scene.classList.remove('shake'), 380);
+}
+
+function setPrompt(i){
+  promptLine.style.opacity = 0;
+  setTimeout(()=>{
+    promptLine.textContent = teases[Math.min(i, teases.length-1)];
+    promptLine.style.opacity = 1;
+  },150);
+}
+
+noBtn.addEventListener('click', ()=>{
+  if(givenUp) return;
+  noClicks++;
+
+  // a little screen wobble each time she almost catches it
+  shakeScreen();
+
+  if(noClicks >= MAX_DODGES){
+    // it gives up: stops moving, settles into a sulky little state
+    givenUp = true;
+    yesScale = Math.min(1 + (MAX_DODGES-1)*0.18, 2.4);
+    noScale = Math.max(1 - (MAX_DODGES-1)*0.14, 0.32);
+    yesBtn.style.transform = `scale(${yesScale})`;
+    noBtn.style.transform = `scale(${noScale}) rotate(-6deg)`;
+    noBtn.classList.add('sulky');
+    noBtn.textContent = sulkyLabel;
+    setPrompt(noClicks);
+    return;
+  }
+
+  yesScale = Math.min(1 + noClicks*0.18, 2.4);
+  noScale = Math.max(1 - noClicks*0.14, 0.32);
+
+  yesBtn.style.transform = `scale(${yesScale})`;
+  noBtn.style.transform = `scale(${noScale})`;
+  noBtn.textContent = currentNoLabel(noClicks);
+
+  setPrompt(noClicks);
+
+  // after a couple of dodges, the No button starts running away
+  if(noClicks >= 2){
+    if(!noBtn.classList.contains('roaming')){
+      const fr = btnField.getBoundingClientRect();
+      noBtn.classList.add('roaming');
+      noBtn.style.left = (fr.width/2 - 40) + 'px';
+      noBtn.style.top = (fr.height/2 - 20) + 'px';
+    }
+    const fieldRect = btnField.getBoundingClientRect();
+    const btnRect = noBtn.getBoundingClientRect();
+    const maxX = Math.max(fieldRect.width - btnRect.width, 10);
+    const maxY = Math.max(fieldRect.height - btnRect.height, 10);
+    noBtn.style.left = (Math.random()*maxX) + 'px';
+    noBtn.style.top = (Math.random()*maxY) + 'px';
+  }
+});
+
+yesBtn.addEventListener('click', ()=>{
+  document.getElementById('stage-ask').style.transition = 'opacity .5s ease';
+  document.getElementById('stage-ask').style.opacity = '0';
+  setTimeout(()=>{
+    document.getElementById('stage-ask').style.display = 'none';
+    document.getElementById('stage-bubbles').style.display = 'flex';
+    requestAnimationFrame(()=>{
+      document.getElementById('stage-bubbles').style.opacity = '1';
+    });
+    startBubbles();
+  }, 500);
+});
+
+/* ---------------- STAGE 2: pop the bubbles ---------------- */
+const bubbleField = document.getElementById('bubbleField');
+const popCountEl = document.getElementById('popCount');
+const progressFill = document.getElementById('progressFill');
+const TARGET_POPS = 12;
+let popped = 0;
+let spawnTimer = null;
+
+const reasons = [
+  "your laugh is my favorite sound",
+  "you make ordinary days feel good",
+  "you listen like it matters",
+  "I love how you see the world",
+  "you're my favorite person to text",
+  "you make me want to be better",
+  "your hugs fix bad days",
+  "I love your ridiculous jokes",
+  "you're the calm in my chaos",
+  "I always want you around",
+  "you make home feel like home",
+  "every reason, always you"
+];
+let usedReasons = [];
+
+function nextReason(){
+  if(usedReasons.length >= reasons.length) usedReasons = [];
+  let idx;
+  do{ idx = Math.floor(Math.random()*reasons.length); }
+  while(usedReasons.includes(idx));
+  usedReasons.push(idx);
+  return reasons[idx];
+}
+
+/* tiny synthesized pop sound, no audio file needed */
+let audioCtx = null;
+function playPopSound(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(620, t0);
+    osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.12);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.18);
+  }catch(e){ /* audio not available, fail silently */ }
+}
+
+function spawnBubble(){
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = 46 + Math.random()*54;
+  b.style.width = size+'px';
+  b.style.height = size+'px';
+  b.style.left = (Math.random()*90)+'vw';
+  b.style.setProperty('--drift', (Math.random()*140-70)+'px');
+  const dur = 6 + Math.random()*4;
+  b.style.animationDuration = dur+'s';
+  b.innerHTML = '<span>' + (Math.random()<0.5?'♥':'❤') + '</span>';
+
+  b.addEventListener('click', ()=> popBubble(b));
+  bubbleField.appendChild(b);
+
+  setTimeout(()=>{ if(b.parentNode) b.remove(); }, dur*1000 + 200);
+}
+
+function popBubble(b){
+  if(!b.parentNode) return;
+  const rect = b.getBoundingClientRect();
+  const fieldRect = bubbleField.getBoundingClientRect();
+  const burst = document.createElement('div');
+  burst.className = 'pop-burst';
+  const size = rect.width*1.4;
+  burst.style.width = size+'px';
+  burst.style.height = size+'px';
+  burst.style.left = (rect.left - fieldRect.left - (size-rect.width)/2)+'px';
+  burst.style.top = (rect.top - fieldRect.top - (size-rect.height)/2)+'px';
+  bubbleField.appendChild(burst);
+  setTimeout(()=> burst.remove(), 500);
+
+  // a little "reason I love you" floats up from where it popped
+  const msg = document.createElement('div');
+  msg.className = 'pop-message';
+  msg.textContent = nextReason();
+  msg.style.left = (rect.left - fieldRect.left + rect.width/2)+'px';
+  msg.style.top = (rect.top - fieldRect.top)+'px';
+  msg.style.transform = 'translateX(-50%)';
+  bubbleField.appendChild(msg);
+  setTimeout(()=> msg.remove(), 1450);
+
+  playPopSound();
+
+  b.remove();
+  popped++;
+  const shown = Math.min(popped,TARGET_POPS);
+  popCountEl.textContent = `${shown} / ${TARGET_POPS} popped`;
+  progressFill.style.width = (shown/TARGET_POPS*100)+'%';
+
+  if(popped >= TARGET_POPS){
+    finishBubbleStage();
+  }
+}
+
+function startBubbles(){
+  spawnTimer = setInterval(spawnBubble, 550);
+}
+
+function finishBubbleStage(){
+  clearInterval(spawnTimer);
+  document.getElementById('stage-bubbles').style.transition = 'opacity .6s ease';
+  document.getElementById('stage-bubbles').style.opacity = '0';
+  setTimeout(()=>{
+    document.getElementById('stage-bubbles').style.display = 'none';
+    // clear any leftover bubbles
+    bubbleField.innerHTML = '';
+    document.getElementById('stage-final').style.display = 'flex';
+    startDandelions();
+    setTimeout(()=>{
+      document.getElementById('finalInner').classList.add('show');
+    }, 500);
+  }, 600);
+}
+
+/* ---------------- STAGE 3: dandelion seeds ---------------- */
+const seedField = document.getElementById('seedField');
+
+/* realistic dandelion puff: a central achene, a stem, and ~28 curved
+   bristles fanning into a hemisphere with tiny fluff tufts at the tips */
+function makeSeedSVG(){
+  const n = 26;
+  const cx = 30, cy = 28, r1 = 6, r2 = 24;
+  let bristles = '';
+  for(let i=0;i<n;i++){
+    const angle = (i/n)*Math.PI*2;
+    const wobble = (Math.random()*0.14 - 0.07);
+    const a = angle + wobble;
+    const x1 = cx + r1*Math.cos(a);
+    const y1 = cy + r1*Math.sin(a)*0.55 - 2;
+    const bend = 0.18 + Math.random()*0.12;
+    const midA = a + (Math.random()<0.5? bend : -bend);
+    const mx = cx + (r1+r2)/1.7*Math.cos(midA);
+    const my = cy + (r1+r2)/1.7*Math.sin(midA)*0.55 - 6;
+    const x2 = cx + r2*Math.cos(a);
+    const y2 = cy + r2*Math.sin(a)*0.55 - 10;
+    const op = (0.35 + Math.random()*0.45).toFixed(2);
+    bristles += `<path d="M${cx.toFixed(1)},${(cy-2).toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)}"
+      stroke="#fff6ee" stroke-width="0.55" fill="none" opacity="${op}" stroke-linecap="round"/>
+      <circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="0.9" fill="#fff6ee" opacity="${(op*0.9).toFixed(2)}"/>`;
+  }
+  return `<svg width="60" height="56" viewBox="0 0 60 56" xmlns="http://www.w3.org/2000/svg">
+    <line x1="${cx}" y1="${cy}" x2="${cx}" y2="56" stroke="#e8c9a8" stroke-width="1" opacity="0.55"/>
+    <g>${bristles}</g>
+    <circle cx="${cx}" cy="${cy-2}" r="2.3" fill="#e0a15c" opacity="0.9"/>
+  </svg>`;
+}
+
+/* small five-petal blossom, loosely dandelion-yellow / blush, with a
+   soft radial gradient center so it reads as a real flower, not an icon */
+let flowerGradId = 0;
+function makeFlowerSVG(){
+  flowerGradId++;
+  const gid = 'fg'+flowerGradId;
+  const petalColors = ['#f0c479','#ef8b7a','#f2b8c6'];
+  const c = petalColors[Math.floor(Math.random()*petalColors.length)];
+  let petals = '';
+  const n = 5;
+  for(let i=0;i<n;i++){
+    const a = (i/n)*360;
+    petals += `<g transform="rotate(${a.toFixed(1)} 20 20)">
+      <ellipse cx="20" cy="10.5" rx="5.4" ry="8.4" fill="url(#${gid})" opacity="0.92"/>
+    </g>`;
+  }
+  return `<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="${gid}" cx="50%" cy="80%" r="90%">
+        <stop offset="0%" stop-color="#fff6ee"/>
+        <stop offset="55%" stop-color="${c}"/>
+        <stop offset="100%" stop-color="${c}" stop-opacity="0.55"/>
+      </radialGradient>
+    </defs>
+    ${petals}
+    <circle cx="20" cy="20" r="4.2" fill="#f0c479"/>
+    <circle cx="20" cy="20" r="4.2" fill="none" stroke="#2b1b3d" stroke-width="0.4" opacity="0.15"/>
+  </svg>`;
+}
+
+function spawnSeed(){
+  const s = document.createElement('div');
+  s.className = 'seed';
+  const isFlower = Math.random() < 0.45;
+  s.innerHTML = isFlower ? makeFlowerSVG() : makeSeedSVG();
+  s.style.left = (Math.random()*100)+'vw';
+  s.style.setProperty('--sx', (Math.random()*260-130)+'px');
+  s.style.setProperty('--sr', (Math.random()*360+180)+'deg');
+  const dur = 7 + Math.random()*6;
+  s.style.animationDuration = dur+'s';
+  const scale = isFlower ? (0.55 + Math.random()*0.7) : (0.6 + Math.random()*0.9);
+  s.style.transform = `scale(${scale})`;
+  seedField.appendChild(s);
+  setTimeout(()=>{ if(s.parentNode) s.remove(); }, dur*1000+200);
+}
+
+let dandelionTimer = null;
+function startDandelions(){
+  for(let i=0;i<14;i++) setTimeout(spawnSeed, i*90);
+  dandelionTimer = setInterval(spawnSeed, 220);
+}
+</script>
+</body>
+</html>
